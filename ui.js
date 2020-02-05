@@ -1,4 +1,4 @@
-$(async function(){
+$(async function() {
 	// cache some selectors we'll be using quite a bit
 	const $allStoriesList = $('#all-articles-list');
 	const $submitForm = $('#submit-form');
@@ -23,7 +23,7 @@ $(async function(){
 	// (temp: always show)
 	$submitForm.show();
 
-	$submitForm.on('submit', async function(evt){
+	$submitForm.on('submit', async function(evt) {
 		evt.preventDefault(); // no page-refresh on submit
 
 		// get author, title, url from input fields
@@ -31,11 +31,9 @@ $(async function(){
 		const title = $('#title').val();
 		const url = $('#url').val();
 
-		// post story data to API
-		// requires user token to POST
-
-		//only post if currentUser exists
+		// only perform actions if a user is logged in with valid token
 		if (currentUser) {
+			//use token and form data to create object for passing to addStory()
 			const newStory = {
 				token: currentUser.loginToken,
 				story: {
@@ -44,25 +42,30 @@ $(async function(){
 					url
 				}
 			};
-			console.log('pass current user and newStory to addStory method', currentUser);
+
+			// use API POST in addStory() to create new story on server,
+			// then return instance of Story class using Response data
+			const storyObj = await storyList.addStory(
+				currentUser.loginToken,
+				newStory
+			);
+
+			// Use storyObj to generate HTML for new story. Prepend to stories list
+			const newStoryHTML = generateStoryHTML(storyObj);
+			$allStoriesList.prepend(newStoryHTML);
+
+			// Reset and hide form
+			$submitForm.slideUp('slow');
+			$submitForm.trigger('reset');
 		}
-
-		//console.log(author, title, url);
-
-		// // call the login static method to build a user instance
-		// const userInstance = await User.login(username, password);
-		// // set the global user to the user instance
-		// currentUser = userInstance;
-		// syncCurrentUserToLocalStorage();
-		// loginAndSubmitForm();
 	});
 
 	/**
-   * Event listener for logging in.
-   *  If successfully we will setup the user instance
-   */
+	 * Event listener for logging in.
+	 *  If successfully we will setup the user instance
+	 */
 
-	$loginForm.on('submit', async function(evt){
+	$loginForm.on('submit', async function(evt) {
 		evt.preventDefault(); // no page-refresh on submit
 
 		// grab the username and password
@@ -78,11 +81,11 @@ $(async function(){
 	});
 
 	/**
-   * Event listener for signing up.
-   *  If successfully we will setup a new user instance
-   */
+	 * Event listener for signing up.
+	 *  If successfully we will setup a new user instance
+	 */
 
-	$createAccountForm.on('submit', async function(evt){
+	$createAccountForm.on('submit', async function(evt) {
 		evt.preventDefault(); // no page refresh
 
 		// grab the required fields
@@ -98,10 +101,10 @@ $(async function(){
 	});
 
 	/**
-   * Log Out Functionality
-   */
+	 * Log Out Functionality
+	 */
 
-	$navLogOut.on('click', function(){
+	$navLogOut.on('click', function() {
 		// empty out local storage
 		localStorage.clear();
 		// refresh the page, clearing memory
@@ -109,10 +112,10 @@ $(async function(){
 	});
 
 	/**
-   * Event Handler for Clicking Login
-   */
+	 * Event Handler for Clicking Login
+	 */
 
-	$navLogin.on('click', function(){
+	$navLogin.on('click', function() {
 		// Show the Login and Create Account Forms
 		$loginForm.slideToggle();
 		$createAccountForm.slideToggle();
@@ -120,21 +123,21 @@ $(async function(){
 	});
 
 	/**
-   * Event handler for Navigation to Homepage
-   */
+	 * Event handler for Navigation to Homepage
+	 */
 
-	$('body').on('click', '#nav-all', async function(){
+	$('body').on('click', '#nav-all', async function() {
 		hideElements();
 		await generateStories();
 		$allStoriesList.show();
 	});
 
 	/**
-   * On page load, checks local storage to see if the user is already logged in.
-   * Renders page information accordingly.
-   */
+	 * On page load, checks local storage to see if the user is already logged in.
+	 * Renders page information accordingly.
+	 */
 
-	async function checkIfLoggedIn(){
+	async function checkIfLoggedIn() {
 		// let's see if we're logged in
 		const token = localStorage.getItem('token');
 		const username = localStorage.getItem('username');
@@ -151,10 +154,10 @@ $(async function(){
 	}
 
 	/**
-   * A rendering function to run to reset the forms and hide the login info
-   */
+	 * A rendering function to run to reset the forms and hide the login info
+	 */
 
-	function loginAndSubmitForm(){
+	function loginAndSubmitForm() {
 		// hide the forms for logging in and signing up
 		$loginForm.hide();
 		$createAccountForm.hide();
@@ -171,11 +174,11 @@ $(async function(){
 	}
 
 	/**
-   * A rendering function to call the StoryList.getStories static method,
-   *  which will generate a storyListInstance. Then render it.
-   */
+	 * A rendering function to call the StoryList.getStories static method,
+	 *  which will generate a storyListInstance. Then render it.
+	 */
 
-	async function generateStories(){
+	async function generateStories() {
 		// get an instance of StoryList
 		const storyListInstance = await StoryList.getStories();
 		// update our global variable
@@ -191,10 +194,10 @@ $(async function(){
 	}
 
 	/**
-   * A function to render HTML for an individual Story instance
-   */
+	 * A function to render HTML for an individual Story instance
+	 */
 
-	function generateStoryHTML(story){
+	function generateStoryHTML(story) {
 		let hostName = getHostName(story.url);
 
 		// render story markup
@@ -214,7 +217,7 @@ $(async function(){
 
 	/* hide all elements in elementsArr */
 
-	function hideElements(){
+	function hideElements() {
 		const elementsArr = [
 			$submitForm,
 			$allStoriesList,
@@ -223,22 +226,21 @@ $(async function(){
 			$loginForm,
 			$createAccountForm
 		];
-		elementsArr.forEach(($elem) => $elem.hide());
+		elementsArr.forEach($elem => $elem.hide());
 	}
 
-	function showNavForLoggedInUser(){
+	function showNavForLoggedInUser() {
 		$navLogin.hide();
 		$navLogOut.show();
 	}
 
 	/* simple function to pull the hostname from a URL */
 
-	function getHostName(url){
+	function getHostName(url) {
 		let hostName;
 		if (url.indexOf('://') > -1) {
 			hostName = url.split('/')[2];
-		}
-		else {
+		} else {
 			hostName = url.split('/')[0];
 		}
 		if (hostName.slice(0, 4) === 'www.') {
@@ -249,7 +251,7 @@ $(async function(){
 
 	/* sync current user information to localStorage */
 
-	function syncCurrentUserToLocalStorage(){
+	function syncCurrentUserToLocalStorage() {
 		if (currentUser) {
 			localStorage.setItem('token', currentUser.loginToken);
 			localStorage.setItem('username', currentUser.username);
