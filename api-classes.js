@@ -28,7 +28,7 @@ class StoryList {
 		const response = await axios.get(`${BASE_URL}/stories`);
 
 		// turn the plain old story objects from the API into instances of the Story class
-		const stories = response.data.stories.map(story => new Story(story));
+		const stories = response.data.stories.map((story) => new Story(story));
 
 		// build an instance of our own class using the new array of stories
 		const storyList = new StoryList(stories);
@@ -151,6 +151,7 @@ class User {
 		// instantiate Story instances for the user's favorites and ownStories
 		existingUser.favorites = response.data.user.favorites.map((s) => new Story(s));
 		existingUser.ownStories = response.data.user.stories.map((s) => new Story(s));
+		//console.log(existingUser.loginToken);
 		return existingUser;
 	}
 }
@@ -174,4 +175,19 @@ class Story {
 		this.createdAt = storyObj.createdAt;
 		this.updatedAt = storyObj.updatedAt;
 	}
+}
+
+async function testAddFav(username, storyId){
+	const response = await axios.post(`${BASE_URL}/users/${username}/favorites/${storyId}`, {
+		token: localStorage.token
+	});
+	console.log(response);
+}
+
+async function testDelFav(username, storyId){
+	const response = await axios.delete(`${BASE_URL}/users/${username}/favorites/${storyId}`, {
+		token:
+			'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InNpdmF0ZXN0IiwiaWF0IjoxNTgwNzQ5MzE5fQ.fUyTDMcvH5ub0bRcEuyrcavYIBF7vhFQArtd9kZU0MA'
+	});
+	console.log(response);
 }
