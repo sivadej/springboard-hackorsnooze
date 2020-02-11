@@ -28,7 +28,7 @@ class StoryList {
 		const response = await axios.get(`${BASE_URL}/stories`);
 
 		// turn the plain old story objects from the API into instances of the Story class
-		const stories = response.data.stories.map((story) => new Story(story));
+		const stories = response.data.stories.map(story => new Story(story));
 
 		// build an instance of our own class using the new array of stories
 		const storyList = new StoryList(stories);
@@ -116,8 +116,8 @@ class User {
 		const existingUser = new User(response.data.user);
 
 		// instantiate Story instances for the user's favorites and ownStories
-		existingUser.favorites = response.data.user.favorites.map((s) => new Story(s));
-		existingUser.ownStories = response.data.user.stories.map((s) => new Story(s));
+		existingUser.favorites = response.data.user.favorites.map(s => new Story(s));
+		existingUser.ownStories = response.data.user.stories.map(s => new Story(s));
 
 		// attach the token to the newUser instance for convenience
 		existingUser.loginToken = response.data.token;
@@ -149,8 +149,8 @@ class User {
 		existingUser.loginToken = token;
 
 		// instantiate Story instances for the user's favorites and ownStories
-		existingUser.favorites = response.data.user.favorites.map((s) => new Story(s));
-		existingUser.ownStories = response.data.user.stories.map((s) => new Story(s));
+		existingUser.favorites = response.data.user.favorites.map(s => new Story(s));
+		existingUser.ownStories = response.data.user.stories.map(s => new Story(s));
 		//console.log(existingUser.loginToken);
 		//console.log('favorites: ' + existingUser.favorites[0].storyId);
 		return existingUser;
@@ -210,17 +210,13 @@ class User {
 		// this.ownStories = user.ownStories;
 		//console.log(this.favorites.map((fav) => fav.title));
 		// call the API
-		const response = await axios.get(
-			`${BASE_URL}/users/${this.username}?token=${this.loginToken}`
-		);
+		const response = await axios.get(`${BASE_URL}/users/${this.username}?token=${this.loginToken}`);
 		//console.log(response.data.user.stories);
 		this.ownStories = response.data.user.stories;
 	}
 
 	async removeStory(id) {
-		const response = await axios.delete(
-			`${BASE_URL}/stories/${id}?token=${this.loginToken}`
-		);
+		const response = await axios.delete(`${BASE_URL}/stories/${id}?token=${this.loginToken}`);
 		console.log('removed story with id: ' + id);
 		console.log(response);
 		//this.reloadUserData(response.data.user);

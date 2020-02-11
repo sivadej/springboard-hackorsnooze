@@ -11,6 +11,9 @@ $(async function () {
 	const $navFavorites = $('#nav-favorites');
 	const $navOwnStories = $('#nav-ownstories');
 	const $navSubmit = $('#nav-submit');
+	const $navProfile = $('#nav-profile');
+
+	$('#user-profile').hide();
 
 	// global storyList variable
 	let storyList = null;
@@ -21,7 +24,7 @@ $(async function () {
 	await checkIfLoggedIn();
 
 	// Click handlers applied to main list, favorites, and own stories lists
-	$("#all-articles-list, #filtered-articles, #my-articles").on('click', async function (e) {
+	$('#all-articles-list, #filtered-articles, #my-articles').on('click', async function (e) {
 		if (e.target.classList.contains('toggle-fav')) {
 			e.preventDefault();
 			if (currentUser.isFavorite(e.target.parentElement.id)) {
@@ -66,11 +69,15 @@ $(async function () {
 			await currentUser.reloadOwnStories();
 
 			// Use storyObj to generate HTML for new story. Prepend to stories list
-			const newStoryHTML = generateStoryHTML(storyObj);
-			$allStoriesList.prepend(newStoryHTML);
+			//const newStoryHTML = generateStoryHTML(storyObj);
+			//$allStoriesList.prepend(newStoryHTML);
 
 			// Reset and hide form
 			$submitForm.slideToggle();
+
+			hideElements();
+			await generateStories();
+			$allStoriesList.show();
 		}
 	});
 
@@ -90,8 +97,10 @@ $(async function () {
 		const userInstance = await User.login(username, password);
 		// set the global user to the user instance
 		currentUser = userInstance;
+		await generateStories();
 		syncCurrentUserToLocalStorage();
 		loginAndSubmitForm();
+		fillProfile();
 	});
 
 	/**
@@ -159,6 +168,10 @@ $(async function () {
 		$submitForm.slideToggle();
 	});
 
+	$navProfile.on('click', function () {
+		$('#user-profile').slideToggle();
+	})
+
 	/**
 	 * Event handler for Navigation to Homepage
 	 */
@@ -187,6 +200,17 @@ $(async function () {
 
 		if (currentUser) {
 			showNavForLoggedInUser();
+			fillProfile();
+		}
+	}
+
+	function fillProfile() {
+		if (currentUser) {
+			console.log('filling profile');
+			document.getElementById('profile-name').append(currentUser.name);
+			document.getElementById('profile-username').append(currentUser.username);
+			convertedDate = new Date(currentUser.createdAt).toDateString();
+			document.getElementById('profile-account-date').append(convertedDate);
 		}
 	}
 
@@ -232,8 +256,8 @@ $(async function () {
 
 	async function generateFavorites() {
 		$filteredArticles.empty();
-		console.log('generating favorites... ')
-		const favsList = await storyList.stories.filter(story => currentUser.isFavorite(story.storyId))
+		console.log('generating favorites... ');
+		const favsList = await storyList.stories.filter(story => currentUser.isFavorite(story.storyId));
 		for (let story of favsList) {
 			$filteredArticles.append(generateStoryHTML(story));
 		}
@@ -241,8 +265,8 @@ $(async function () {
 
 	async function generateOwnStories() {
 		$ownStories.empty();
-		console.log('generating own stories... ')
-		const ownList = await storyList.stories.filter(story => currentUser.isOwnStory(story.storyId))
+		console.log('generating own stories... ');
+		const ownList = await storyList.stories.filter(story => currentUser.isOwnStory(story.storyId));
 		for (let story of ownList) {
 			$ownStories.append(generateStoryHTML(story));
 		}
@@ -258,11 +282,13 @@ $(async function () {
 		let markupIfFavorite = '';
 		let markupIfOwnStory = '';
 
+		// render story markup but only show "favorite" and "delete" icons when logged in
+
 		if (currentUser) {
 			markupIfFavorite = `<i class="toggle-fav fa ${currentUser.isFavorite(story.storyId) ? 'fa-star' : 'fa-star-o'}"></i>`;
 			markupIfOwnStory = `${currentUser.isOwnStory(story.storyId) ? '<i class="fa fa-trash delete-icon"></i>' : ''}`;
 		}
-		// render story markup, only show favorite and delete icons when logged in
+
 		const storyMarkup = $(`
 	  <li id="${story.storyId}">
 	  ${markupIfFavorite} ${markupIfOwnStory}
@@ -290,7 +316,7 @@ $(async function () {
 			$loginForm,
 			$createAccountForm
 		];
-		elementsArr.forEach(($elem) => $elem.hide());
+		elementsArr.forEach($elem => $elem.hide());
 	}
 
 	function showNavForLoggedInUser() {
@@ -299,6 +325,7 @@ $(async function () {
 		$navFavorites.show();
 		$navOwnStories.show();
 		$navSubmit.show();
+		$navProfile.show();
 	}
 
 	/* simple function to pull the hostname from a URL */
@@ -326,8 +353,3 @@ $(async function () {
 		}
 	}
 });
-
-// const submitForm = document.getElementById('submit-form');
-// submitForm.classList.remove('hidden');
-
-// const submitBtn = document.querySelector('#submit-form button');
