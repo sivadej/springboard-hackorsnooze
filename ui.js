@@ -1,4 +1,4 @@
-$(async function(){
+$(async function () {
 	// cache some selectors we'll be using quite a bit
 	const $allStoriesList = $('#all-articles-list');
 	const $submitForm = $('#submit-form');
@@ -8,6 +8,9 @@ $(async function(){
 	const $ownStories = $('#my-articles');
 	const $navLogin = $('#nav-login');
 	const $navLogOut = $('#nav-logout');
+	const $navFavorites = $('#nav-favorites');
+	const $navOwnStories = $('#nav-ownstories');
+	const $navSubmit = $('#nav-submit');
 
 	// global storyList variable
 	let storyList = null;
@@ -17,14 +20,10 @@ $(async function(){
 
 	await checkIfLoggedIn();
 
-	// Event listener for favorites
-	$allStoriesList.on('click', async function(e){
+	// Click handlers applied to main list, favorites, and own stories lists
+	$("#all-articles-list, #filtered-articles, #my-articles").on('click', async function (e) {
 		if (e.target.classList.contains('toggle-fav')) {
 			e.preventDefault();
-			//remove id of clicked story
-			//console.log(e.target.parentElement.id);
-			//console.log(e.target);
-			//currentUser.removeFavorite(e.target.parentElement.id);
 			if (currentUser.isFavorite(e.target.parentElement.id)) {
 				currentUser.removeFavorite(e.target.parentElement.id);
 				e.target.classList.replace('fa-star', 'fa-star-o');
@@ -34,15 +33,14 @@ $(async function(){
 				e.target.classList.replace('fa-star-o', 'fa-star');
 			}
 		}
+		if (e.target.classList.contains('delete-icon')) {
+			e.preventDefault();
+			currentUser.removeStory(e.target.parentElement.id);
+			e.target.parentElement.remove();
+		}
 	});
 
-	//TODO:
-	// create a Submit link to show the hidden submitForm
-	// only when a user is logged in
-	// (temp: always show)
-	$submitForm.show();
-
-	$submitForm.on('submit', async function(evt){
+	$submitForm.on('submit', async function (evt) {
 		evt.preventDefault(); // no page-refresh on submit
 
 		// get author, title, url from input fields
@@ -65,14 +63,14 @@ $(async function(){
 			// use API POST in addStory() to create new story on server,
 			// then return instance of Story class using Response data
 			const storyObj = await storyList.addStory(currentUser.loginToken, newStory);
+			await currentUser.reloadOwnStories();
 
 			// Use storyObj to generate HTML for new story. Prepend to stories list
 			const newStoryHTML = generateStoryHTML(storyObj);
 			$allStoriesList.prepend(newStoryHTML);
 
 			// Reset and hide form
-			$submitForm.slideUp('slow');
-			$submitForm.trigger('reset');
+			$submitForm.slideToggle();
 		}
 	});
 
@@ -81,7 +79,7 @@ $(async function(){
 	 *  If successfully we will setup the user instance
 	 */
 
-	$loginForm.on('submit', async function(evt){
+	$loginForm.on('submit', async function (evt) {
 		evt.preventDefault(); // no page-refresh on submit
 
 		// grab the username and password
@@ -101,7 +99,7 @@ $(async function(){
 	 *  If successfully we will setup a new user instance
 	 */
 
-	$createAccountForm.on('submit', async function(evt){
+	$createAccountForm.on('submit', async function (evt) {
 		evt.preventDefault(); // no page refresh
 
 		// grab the required fields
@@ -120,7 +118,7 @@ $(async function(){
 	 * Log Out Functionality
 	 */
 
-	$navLogOut.on('click', function(){
+	$navLogOut.on('click', function () {
 		// empty out local storage
 		localStorage.clear();
 		// refresh the page, clearing memory
@@ -131,18 +129,41 @@ $(async function(){
 	 * Event Handler for Clicking Login
 	 */
 
-	$navLogin.on('click', function(){
+	$navLogin.on('click', function () {
 		// Show the Login and Create Account Forms
 		$loginForm.slideToggle();
 		$createAccountForm.slideToggle();
 		$allStoriesList.toggle();
 	});
 
+	$navFavorites.on('click', async function () {
+		// Show the favorites list
+		$allStoriesList.hide();
+		$ownStories.hide();
+		await generateStories();
+		await generateFavorites();
+		$filteredArticles.show();
+	});
+
+	$navOwnStories.on('click', async function () {
+		// Show the favorites list
+		$allStoriesList.hide();
+		$filteredArticles.hide();
+		await generateStories();
+		await generateOwnStories();
+		$ownStories.show();
+	});
+
+	$navSubmit.on('click', function () {
+		// Show the new story submission form
+		$submitForm.slideToggle();
+	});
+
 	/**
 	 * Event handler for Navigation to Homepage
 	 */
 
-	$('body').on('click', '#nav-all', async function(){
+	$('body').on('click', '#nav-all', async function () {
 		hideElements();
 		await generateStories();
 		$allStoriesList.show();
@@ -153,7 +174,7 @@ $(async function(){
 	 * Renders page information accordingly.
 	 */
 
-	async function checkIfLoggedIn(){
+	async function checkIfLoggedIn() {
 		// let's see if we're logged in
 		const token = localStorage.getItem('token');
 		const username = localStorage.getItem('username');
@@ -173,7 +194,7 @@ $(async function(){
 	 * A rendering function to run to reset the forms and hide the login info
 	 */
 
-	function loginAndSubmitForm(){
+	function loginAndSubmitForm() {
 		// hide the forms for logging in and signing up
 		$loginForm.hide();
 		$createAccountForm.hide();
@@ -194,7 +215,7 @@ $(async function(){
 	 *  which will generate a storyListInstance. Then render it.
 	 */
 
-	async function generateStories(){
+	async function generateStories() {
 		// get an instance of StoryList
 		const storyListInstance = await StoryList.getStories();
 		// update our global variable
@@ -209,20 +230,42 @@ $(async function(){
 		}
 	}
 
+	async function generateFavorites() {
+		$filteredArticles.empty();
+		console.log('generating favorites... ')
+		const favsList = await storyList.stories.filter(story => currentUser.isFavorite(story.storyId))
+		for (let story of favsList) {
+			$filteredArticles.append(generateStoryHTML(story));
+		}
+	}
+
+	async function generateOwnStories() {
+		$ownStories.empty();
+		console.log('generating own stories... ')
+		const ownList = await storyList.stories.filter(story => currentUser.isOwnStory(story.storyId))
+		for (let story of ownList) {
+			$ownStories.append(generateStoryHTML(story));
+		}
+	}
+
 	/**
 	 * A function to render HTML for an individual Story instance
 	 */
 
-	function generateStoryHTML(story){
+	function generateStoryHTML(story) {
 		let hostName = getHostName(story.url);
 
-		//${currentUser.isFavorite(story.storyId)}
-		// render story markup
+		let markupIfFavorite = '';
+		let markupIfOwnStory = '';
+
+		if (currentUser) {
+			markupIfFavorite = `<i class="toggle-fav fa ${currentUser.isFavorite(story.storyId) ? 'fa-star' : 'fa-star-o'}"></i>`;
+			markupIfOwnStory = `${currentUser.isOwnStory(story.storyId) ? '<i class="fa fa-trash delete-icon"></i>' : ''}`;
+		}
+		// render story markup, only show favorite and delete icons when logged in
 		const storyMarkup = $(`
 	  <li id="${story.storyId}">
-	  <i class="toggle-fav fa ${
-			currentUser.isFavorite(story.storyId) ? 'fa-star' :
-			'fa-star-o'}"></i>
+	  ${markupIfFavorite} ${markupIfOwnStory}
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
@@ -231,14 +274,14 @@ $(async function(){
 		<small class="article-username">posted by ${story.username}</small>
 		
       </li>
-    `);
+	`);
 
 		return storyMarkup;
 	}
 
 	/* hide all elements in elementsArr */
 
-	function hideElements(){
+	function hideElements() {
 		const elementsArr = [
 			$submitForm,
 			$allStoriesList,
@@ -250,14 +293,17 @@ $(async function(){
 		elementsArr.forEach(($elem) => $elem.hide());
 	}
 
-	function showNavForLoggedInUser(){
+	function showNavForLoggedInUser() {
 		$navLogin.hide();
 		$navLogOut.show();
+		$navFavorites.show();
+		$navOwnStories.show();
+		$navSubmit.show();
 	}
 
 	/* simple function to pull the hostname from a URL */
 
-	function getHostName(url){
+	function getHostName(url) {
 		let hostName;
 		if (url.indexOf('://') > -1) {
 			hostName = url.split('/')[2];
@@ -273,7 +319,7 @@ $(async function(){
 
 	/* sync current user information to localStorage */
 
-	function syncCurrentUserToLocalStorage(){
+	function syncCurrentUserToLocalStorage() {
 		if (currentUser) {
 			localStorage.setItem('token', currentUser.loginToken);
 			localStorage.setItem('username', currentUser.username);

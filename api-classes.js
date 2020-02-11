@@ -156,8 +156,8 @@ class User {
 		return existingUser;
 	}
 
-	// TODO: Method to favorite/unfavorite a story. Story remains favorited on refresh.
-	// Favorite indicator should toggle on dom
+	// Methods to favorite/unfavorite a story. Story remains favorited on refresh.
+	// Changes should be reflected on page
 	async addFavorite(storyId) {
 		//console.log('addFavorite() invoked, passed in ' + storyId);
 		// console.log('for user ' + localStorage.username);
@@ -181,9 +181,8 @@ class User {
 		const response = await axios.delete(
 			`${BASE_URL}/users/${this.username}/favorites/${storyId}?token=${this.loginToken}`
 		);
-		console.log(response);
+		//console.log(response);
 		this.reloadFavorites(response.data.user.favorites);
-		console.log('favorite removed');
 	}
 
 	isFavorite(storyId) {
@@ -192,13 +191,47 @@ class User {
 		for (let fav of this.favorites) {
 			if (storyId === fav.storyId) return true;
 		}
-		return false;
+		// QUESTION: is there a more efficient solution than going through each item and then returning
+		// true on the first match?
+		//return false;
 	}
 
 	reloadFavorites(favs) {
 		//console.log(favs.map((fav) => fav.title));
 		this.favorites = favs;
+		// this.ownStories = user.ownStories;
 		//console.log(this.favorites.map((fav) => fav.title));
+	}
+
+	//Sync changes made via API to current instance of User
+	async reloadOwnStories() {
+		//console.log(favs.map((fav) => fav.title));
+		// this.favorites = user.favorites;
+		// this.ownStories = user.ownStories;
+		//console.log(this.favorites.map((fav) => fav.title));
+		// call the API
+		const response = await axios.get(
+			`${BASE_URL}/users/${this.username}?token=${this.loginToken}`
+		);
+		//console.log(response.data.user.stories);
+		this.ownStories = response.data.user.stories;
+	}
+
+	async removeStory(id) {
+		const response = await axios.delete(
+			`${BASE_URL}/stories/${id}?token=${this.loginToken}`
+		);
+		console.log('removed story with id: ' + id);
+		console.log(response);
+		//this.reloadUserData(response.data.user);
+		//TODO: reflect changes on current User instance and DOM
+	}
+
+	// Check if storyId passed in belongs to the currently logged in User
+	isOwnStory(id) {
+		for (let story of this.ownStories) {
+			if (id === story.storyId) return true;
+		}
 	}
 }
 
@@ -221,19 +254,4 @@ class Story {
 		this.createdAt = storyObj.createdAt;
 		this.updatedAt = storyObj.updatedAt;
 	}
-}
-
-async function testAddFav(username, storyId){
-	const response = await axios.post(`${BASE_URL}/users/${username}/favorites/${storyId}`, {
-		token: localStorage.token
-	});
-	console.log(response);
-}
-
-async function testDelFav(username, storyId){
-	const response = await axios.delete(`${BASE_URL}/users/${username}/favorites/${storyId}`, {
-		token:
-			'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InNpdmF0ZXN0IiwiaWF0IjoxNTgwNzQ5MzE5fQ.fUyTDMcvH5ub0bRcEuyrcavYIBF7vhFQArtd9kZU0MA'
-	});
-	console.log(response);
 }
