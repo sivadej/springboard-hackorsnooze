@@ -65,16 +65,12 @@ $(async function () {
 
 			// use API POST in addStory() to create new story on server,
 			// then return instance of Story class using Response data
+			// Use storyObj to generate HTML for new story. Prepend to stories list
 			const storyObj = await storyList.addStory(currentUser.loginToken, newStory);
 			await currentUser.reloadOwnStories();
 
-			// Use storyObj to generate HTML for new story. Prepend to stories list
-			//const newStoryHTML = generateStoryHTML(storyObj);
-			//$allStoriesList.prepend(newStoryHTML);
-
 			// Reset and hide form
 			$submitForm.slideToggle();
-
 			hideElements();
 			await generateStories();
 			$allStoriesList.show();
