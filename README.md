@@ -1,7 +1,6 @@
 ﻿# Hack-or-Snooze v.0.0.0.0.0.0.0.0.1
 **Springboard Curriculum > AJAX with jQuery Exercise**
 
-
  **Summary:** This exercise is to build functionality on a clone of the [Hacker News](https://news.ycombinator.com/) website. Using the provided custom API and starter code, build out functionality in front-end Javascript using jQuery and AJAX.
 
  The starter code provided a design template, login/logout functionality, some non-functioning forms, and a homepage story list rendered from the API.
@@ -16,8 +15,8 @@ No installation required. Download and open `index.html` on your browser. The la
 ✔ Add Favorite<br>
 ✔ Remove Story
 
-#### Incomplete/Future Features
-⌛ Register User<br>
+#### Incomplete Features / Future Additions
+⌛ Register New User<br>
 ⌛ Edit Profile<br>
 ⌛ Responsive Design
  

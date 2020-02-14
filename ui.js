@@ -252,7 +252,6 @@ $(async function () {
 
 	async function generateFavorites() {
 		$filteredArticles.empty();
-		console.log('generating favorites... ');
 		const favsList = await storyList.stories.filter(story => currentUser.isFavorite(story.storyId));
 		for (let story of favsList) {
 			$filteredArticles.append(generateStoryHTML(story));
