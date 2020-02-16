@@ -18,7 +18,8 @@ No installation required. Download and open `index.html` on your browser. The la
 #### Incomplete Features / Future Additions
 ⌛ Register New User<br>
 ⌛ Edit Profile<br>
-⌛ Responsive Design
+⌛ Responsive Design<br>
+⌛ Tests
  
 ### Authors/Contributors
 - Springboard
